@@ -20,8 +20,10 @@ void main()
     vec3 viewDir = normalize(cameraPosition - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
 
-    vec3 ourColor = vec3(0.9, 0.9, 0.9);
+    vec3 tipColor = vec3(0.5, 0.8, 0.2);
+    vec3 basColor = vec3(0.1, 0.8, 0.2);
 
+    vec3 ourColor = mix(basColor, tipColor, FragPos.z / 15);
     // if(FragPos.z <= -180)
     //     ourColor = vec3(0.0f, 0.3f, 0.8f);
 

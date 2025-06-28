@@ -26,15 +26,13 @@ unsigned int SCR_WIDTH = 700;
 unsigned int SCR_HEIGHT = 700;
 
 bool camRotation = false;
-glm::vec3 cameraPos(100.0f, 300.0f, 200.0f), targetPos(0.0f), cameraUp(0.0f, 0.0f, 1.0f);
-light lightSource = {glm::vec3(0.0f, 0.0f, 200.0f), glm::vec4(1.0f), 1.0f};
+glm::vec3 cameraPos(80.0f, 80.0f, 100.0f), targetPos(0.0f), cameraUp(0.0f, 0.0f, 1.0f);
+light lightSource = {glm::vec3(0.0f, -500.0f, 200.0f), glm::vec4(1.0f), 1.0f};
 glm::mat4 rotMat(1.0f);
 
 // Globals needed for emscripten main loop
 GLFWwindow* window = nullptr;
-player* pPtr = nullptr;
-shader *shaderPtr = nullptr;
-
+std::vector<gameObject *> world;
 
 void main_loop()
 {
@@ -44,9 +42,15 @@ void main_loop()
 
     processInput(window);
 
+    view  = glm::lookAt(cameraPos, targetPos, cameraUp);
+    projection = glm::perspective(glm::radians(85.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    pPtr->draw(lightSource, cameraPos);
+    for(int i = 0; i < world.size(); i++)
+    {
+        world[i]->draw(lightSource, cameraPos);
+    }
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -97,25 +101,36 @@ int main()
     }
     #endif
 
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClearColor(0.4f, 0.8f, 1.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
     shader mainShader;
-    shaderPtr = &mainShader;
+    shader grassShader;
 
     #ifdef __EMSCRIPTEN__
         mainShader.loadShaders("docs/vS3dWeb.shader", "docs/fS3DWeb.shader");
     #else
         mainShader.loadShaders("Shaders/vS3D.shader", "Shaders/fS3D.shader");
+        grassShader.loadShaders("Shaders/vS3D.shader", "Shaders/fsGrass.shader");
     #endif
 
+    world.push_back(new ground(&mainShader));
+    world[0]->sheet3D(100, 100, 10);
+    world[0]->setPosition(glm::vec3(-50.0f, -50.0f, 0.0f));
 
-    pPtr = new player(&mainShader);
-    pPtr->sheet3D(800, 800, 100);
-    // pPtr->setPosition(glm::vec3(-300.0f, 300.0f, 40.0f));
+    world.push_back(new ground(&grassShader));
+    world[1]->grass(100, 10);
+    world[1]->setPosition(glm::vec3(-50.0f, -50.0f, 0.0f));
 
-    view  = glm::lookAt(cameraPos, targetPos, cameraUp);
-    projection = glm::perspective(glm::radians(85.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1200.0f);
+    // world.push_back(new ground(&mainShader));
+    // world[0]->terrain(3000, 100);
+    // world[0]->setPosition(glm::vec3(-1500.0f, -1500.0f, 0.0f));
+
+    // world.push_back(new ground(&mainShader));
+    // world[1]->water(3000, 500);
+    // world[1]->setPosition(glm::vec3(-1500.0f, -1500.0f, -200.0f));
+
+
 
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(main_loop, 0, 1);
